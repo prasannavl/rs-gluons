@@ -1,0 +1,10 @@
+[package]
+name = "hello-rs-nostd"
+version = "0.1.0"
+authors = ["Prasanna V. Loganathar <pvl@prasannavl.com>"]
+
+[dependencies]
+kernel32-sys = "0.2.2"
+winapi = "0.2.8"
+[profile.release]
+lto = true
