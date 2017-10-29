@@ -7,7 +7,6 @@ extern crate kernel32;
 
 use core::ptr;
 
-// Entry point for this program.
 #[start]
 fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let msg = "Hello world!\n";
