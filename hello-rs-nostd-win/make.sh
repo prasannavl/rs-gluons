@@ -38,7 +38,11 @@ build() {
 }
 
 manifest() {
-    init   
+    init
+    if [ ! -f "$BUILD_TARGET_EXE" ]; then
+        echo "> target not found: $BUILD_TARGET_EXE"
+        exit
+    fi
     echo "> embed manifest: start"
     local CMD="mt -nologo -manifest $MANIFEST_PATH -outputresource:$BUILD_TARGET_EXE;#1"
     local VCCMD="C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
