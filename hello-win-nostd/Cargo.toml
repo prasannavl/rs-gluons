@@ -1,5 +1,5 @@
 [package]
-name = "hello-rs-nostd"
+name = "main"
 version = "0.1.0"
 authors = ["Prasanna V. Loganathar <pvl@prasannavl.com>"]
 

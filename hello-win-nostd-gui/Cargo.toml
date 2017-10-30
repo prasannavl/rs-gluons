@@ -1,6 +1,6 @@
 [package]
 authors = ["Prasanna V. Loganathar <pvl@prasannavl.com>"]
-name = "hello-rs-nostd-win"
+name = "main"
 version = "0.1.0"
 [dependencies]
 kernel32-sys = "0.2.2"

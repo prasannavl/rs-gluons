@@ -23,7 +23,8 @@ init() {
 }
 
 setup_vars() {
-    PKG_BASE_NAME="$(basename $(pwd))"
+    # PKG_BASE_NAME="$(basename $(pwd))"
+    PKG_BASE_NAME="main"
     BUILD_TARGET="${BUILD_TARGET:-${PKG_BASE_NAME}}"
     BUILD_MODE="${BUILD_MODE:-release}"
     BUILD_TARGET_EXE="./target/${BUILD_MODE}/${BUILD_TARGET}.exe"
