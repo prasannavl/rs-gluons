@@ -1,0 +1,12 @@
+[package]
+name = "gluons"
+version = "0.1.0"
+authors = ["Prasanna V. Loganathar <pvl@prasannavl.com>"]
+description = "A grab bag of rust modules, and templates to hold things together"
+license = "Apache-2.0"
+homepage = "https://github.com/prasannvl/rs-gluons"
+repository = "https://github.com/prasannvl/rs-gluons"
+readme = "README.md"
+keywords = ["algorithms", "utils", "templates"]
+
+[dependencies]
