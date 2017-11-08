@@ -1,3 +1,15 @@
+use ::std::ptr::{copy_nonoverlapping};
+use ::std::mem;
+
+fn should_sort<T>(slice: &[T]) -> bool {
+    // Sorting has no meaningful behavior on zero-sized types.
+    if ::std::mem::size_of::<T>() == 0 {
+        return false;
+    }
+    let len = slice.len();
+    return len > 1;
+}
+
 // Basically, swap each item with it's next, and 'bubble'
 // the highest element up to the right, one by one.
 //
@@ -54,5 +66,79 @@ pub fn select_sort<T:PartialOrd>(slice: &mut [T]) {
                 slice.swap(j, i);
             }
         }
+    }
+}
+
+pub fn merge_sort<T:PartialOrd>(slice: &mut [T]) {
+    if !should_sort(&slice) {
+        return;
+    }
+    let len = slice.len();
+    let mut v = Vec::<T>::with_capacity(len);
+    unsafe { v.set_len(len); }
+    let mut temp = v.into_boxed_slice();
+    merge_sort_with_buf(slice, temp.as_mut());
+}
+
+pub fn merge_sort_with_buf<T: PartialOrd>(slice: &mut [T], buf: &mut [T]) {
+    if !should_sort(&slice) {
+        return;
+    }
+    let len = slice.len();
+    let middle = len / 2;
+
+    merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle]);
+    merge_sort_with_buf(&mut slice[middle..], &mut buf[middle..]);
+    merge_sorted_halves(slice, buf);
+}
+
+pub fn merge_sorted_halves<T: PartialOrd>(slice: &mut [T], buf: &mut [T]) {
+    if !should_sort(&slice) {
+        return;
+    }
+    let len = slice.len();
+    let middle = len / 2;
+    let mut left = 0 as usize;
+    let left_end = middle - 1;
+    let mut right = middle;
+    let right_end = len - 1;
+
+    let mut current = left;
+
+    while left <= left_end && right <= right_end {
+        // The safety of the unchecked ops are verified by the loop above.
+        unsafe {
+            if slice.get_unchecked(left) < slice.get_unchecked(right) {
+                mem::swap(buf.get_unchecked_mut(current), slice.get_unchecked_mut(left));
+                left += 1;
+            } else {
+                mem::swap(buf.get_unchecked_mut(current), slice.get_unchecked_mut(right));
+                right += 1;
+            }
+        }
+        current += 1;
+    }
+
+    let left_rem_ptr;
+    let right_rem_ptr;
+    let buf_rem_ptr;
+
+    unsafe {
+        // CAUTION: Careful with the safety if tweaking any of this.
+        // Their safety is inter-linked. One or more of left, right and current
+        // pointers could be len + 1, but in that case safety
+        // is ensured by correctly offsetting the `count` in `copy_nonoverlapping` methods.
+
+        left_rem_ptr = slice.as_ptr().offset(left as isize);
+        right_rem_ptr = slice.as_ptr().offset(right as isize);
+        buf_rem_ptr = buf.as_mut_ptr().offset(current as isize);
+
+        // Copy left overs
+        // Note: `count` should be 0 when left or right is len + 1.
+        copy_nonoverlapping(left_rem_ptr, buf_rem_ptr, left_end + 1 - left);
+        copy_nonoverlapping(right_rem_ptr, buf_rem_ptr, right_end + 1 - right);
+
+        // Copy the entire buf back into slice
+        copy_nonoverlapping(buf.as_ptr(), slice.as_mut_ptr(), len);
     }
 }
