@@ -1,5 +1,7 @@
-use ::std::ptr::{copy_nonoverlapping};
-use ::std::mem;
+use std::ptr::{copy_nonoverlapping};
+use std::mem;
+use std::cmp::Ordering;
+use std::cmp::Ordering::*;
 
 fn should_sort<T>(slice: &[T]) -> bool {
     // Sorting has no meaningful behavior on zero-sized types.
@@ -18,11 +20,13 @@ fn should_sort<T>(slice: &[T]) -> bool {
 // - compares each item to every item that's not sorted to the right.
 // - partials: sorted right partition (until n-i)
 //
-pub fn bubble_sort<T:PartialOrd>(slice: &mut [T]) {
+pub fn bubble_sort<T, F>(slice: &mut [T], mut compare: F)
+    where F: FnMut(&T, &T) -> Ordering {
     let len = slice.len();
     for i in 0..len {
-        for j in 0..len-i-1 {
-            if &slice[j] > &slice[j + 1]  {
+        for j in 0..len - i - 1 {
+            // if &slice[j] > &slice[j + 1]
+            if compare(&slice[j], &slice[j + 1]) == Greater {
                 slice.swap(j, j + 1);
             }
         }
@@ -38,12 +42,14 @@ pub fn bubble_sort<T:PartialOrd>(slice: &mut [T]) {
 // - no partials
 // - partial extent: in a 0..n pass, items until n is sorted to the left.
 //
-pub fn insert_sort<T:PartialOrd>(slice: &mut [T]) {
+pub fn insert_sort<T, F>(slice: &mut [T], mut compare: F)
+    where F: FnMut(&T, &T) -> Ordering {
     let len = slice.len();
     // i=0 can be skipped
     for i in 1..len {
         let mut j = i;
-        while j > 0 && &slice[j] < &slice[j - 1] {
+        // while j > 0 && &slice[j] < &slice[j - 1]
+        while j > 0 && compare(&slice[j], &slice[j - 1]) == Less {
             slice.swap(j, j-1);
             j -= 1;
         }
@@ -58,18 +64,21 @@ pub fn insert_sort<T:PartialOrd>(slice: &mut [T]) {
 // - compares all elements after item to the item, and swap.
 // - partials: sorted left partition until i
 //
-pub fn select_sort<T:PartialOrd>(slice: &mut [T]) {
+pub fn select_sort<T, F>(slice: &mut [T], mut compare: F)
+    where F: FnMut(&T, &T) -> Ordering {
     let len = slice.len();
     for i in 0..len {
         for j in i+1..len {
-            if &slice[j] < &slice[i] {
+            // if &slice[j] < &slice[i]
+            if compare(&slice[j], &slice[i]) == Less {
                 slice.swap(j, i);
             }
         }
     }
 }
 
-pub fn merge_sort<T:PartialOrd>(slice: &mut [T]) {
+pub fn merge_sort<T, F>(slice: &mut [T], mut compare: F)
+    where F: FnMut(&T, &T) -> Ordering {
     if !should_sort(&slice) {
         return;
     }
@@ -77,22 +86,24 @@ pub fn merge_sort<T:PartialOrd>(slice: &mut [T]) {
     let mut v = Vec::<T>::with_capacity(len);
     unsafe { v.set_len(len); }
     let mut temp = v.into_boxed_slice();
-    merge_sort_with_buf(slice, temp.as_mut());
+    merge_sort_with_buf(slice, temp.as_mut(), &mut compare);
 }
 
-pub fn merge_sort_with_buf<T: PartialOrd>(slice: &mut [T], buf: &mut [T]) {
+pub fn merge_sort_with_buf<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F)
+    where F: FnMut(&T, &T) -> Ordering {
     if !should_sort(&slice) {
         return;
     }
     let len = slice.len();
     let middle = len / 2;
 
-    merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle]);
-    merge_sort_with_buf(&mut slice[middle..], &mut buf[middle..]);
-    merge_sorted_halves(slice, buf);
+    merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle], compare);
+    merge_sort_with_buf(&mut slice[middle..], &mut buf[middle..], compare);
+    merge_sorted_halves(slice, buf, compare);
 }
 
-pub fn merge_sorted_halves<T: PartialOrd>(slice: &mut [T], buf: &mut [T]) {
+pub fn merge_sorted_halves<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F)
+    where F: FnMut(&T, &T) -> Ordering {
     if !should_sort(&slice) {
         return;
     }
@@ -108,7 +119,8 @@ pub fn merge_sorted_halves<T: PartialOrd>(slice: &mut [T], buf: &mut [T]) {
     while left <= left_end && right <= right_end {
         // The safety of the unchecked ops are verified by the loop above.
         unsafe {
-            if slice.get_unchecked(left) < slice.get_unchecked(right) {
+            // if slice.get_unchecked(left) < slice.get_unchecked(right)
+            if compare(slice.get_unchecked(left), slice.get_unchecked(right)) == Less {
                 mem::swap(buf.get_unchecked_mut(current), slice.get_unchecked_mut(left));
                 left += 1;
             } else {
