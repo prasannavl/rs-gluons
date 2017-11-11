@@ -83,6 +83,9 @@ where
     }
 }
 
+// Slices of up to this length get sorted using insertion sort.
+const THRESHOLD_INSERTION_SORT: usize = 20;
+
 pub fn merge_sort<T, F>(slice: &mut [T], mut compare: F)
 where
     F: FnMut(&T, &T) -> Ordering,
@@ -91,6 +94,12 @@ where
         return;
     }
     let len = slice.len();
+
+    if len <= THRESHOLD_INSERTION_SORT {
+        insert_sort(slice, compare);
+        return;
+    }
+
     let mut v = Vec::<T>::with_capacity(len);
     unsafe {
         v.set_len(len);
@@ -107,6 +116,12 @@ where
         return;
     }
     let len = slice.len();
+
+    if len <= THRESHOLD_INSERTION_SORT {
+        insert_sort(slice, compare);
+        return;
+    }
+
     let middle = len / 2;
 
     merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle], compare);
