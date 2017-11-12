@@ -3,15 +3,6 @@ use std::mem;
 use std::cmp::Ordering;
 use std::cmp::Ordering::*;
 
-fn should_sort<T>(slice: &[T]) -> bool {
-    // Sorting has no meaningful behavior on zero-sized types.
-    if ::std::mem::size_of::<T>() == 0 {
-        return false;
-    }
-    let len = slice.len();
-    return len > 1;
-}
-
 // Basically, swap each item with it's next, and 'bubble'
 // the highest element up to the right, one by one.
 //
@@ -83,53 +74,83 @@ where
     }
 }
 
-// Slices of up to this length get sorted using insertion sort.
-const THRESHOLD_INSERTION_SORT: usize = 20;
-
-pub fn merge_sort<T, F>(slice: &mut [T], mut compare: F)
-where
-    F: FnMut(&T, &T) -> Ordering,
-{
-    if !should_sort(&slice) {
-        return;
+fn should_sort<T>(slice: &[T]) -> bool {
+    // Sorting has no meaningful behavior on zero-sized types.
+    if ::std::mem::size_of::<T>() == 0 {
+        return false;
     }
     let len = slice.len();
+    return len > 1;
+}
 
-    if len <= THRESHOLD_INSERTION_SORT {
-        insert_sort(slice, compare);
-        return;
-    }
-
+fn create_slice<T>(len: usize) -> Box<[T]> {
     let mut v = Vec::<T>::with_capacity(len);
     unsafe {
         v.set_len(len);
     }
-    let mut temp = v.into_boxed_slice();
-    merge_sort_with_buf(slice, temp.as_mut(), &mut compare);
+    return v.into_boxed_slice();
 }
 
-pub fn merge_sort_with_buf<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F)
+pub fn merge_sort<T, F>(slice: &mut [T], compare: F)
+where
+    F: FnMut(&T, &T) -> Ordering,
+{
+    // Slices of up to this length get sorted using insertion sort.
+    const DEFAULT_INSERT_SORT_MAX_THRESHOLD: usize = 20;
+    merge_sort_with_insert(slice, compare, DEFAULT_INSERT_SORT_MAX_THRESHOLD);
+}
+
+pub fn merge_sort_pure<T, F>(slice: &mut [T], compare: F)
+where
+    F: FnMut(&T, &T) -> Ordering,
+{
+    merge_sort_with_insert(slice, compare, 0);
+}
+
+pub fn merge_sort_with_insert<T, F>(slice: &mut [T], mut compare: F, insert_sort_max_threshold: usize)
 where
     F: FnMut(&T, &T) -> Ordering,
 {
     if !should_sort(&slice) {
         return;
     }
+
     let len = slice.len();
 
-    if len <= THRESHOLD_INSERTION_SORT {
+    if len <= insert_sort_max_threshold {
+        insert_sort(slice, compare);
+        return;
+    }
+
+    let mut temp = create_slice(len);
+    merge_sort_with_buf(slice, temp.as_mut(), &mut compare, insert_sort_max_threshold);
+}
+
+pub fn merge_sort_with_buf<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F, insert_sort_max_threshold: usize)
+where
+    F: FnMut(&T, &T) -> Ordering,
+{
+    if !should_sort(&slice) {
+        return;
+    }
+    
+    let len = slice.len();
+
+    if len <= insert_sort_max_threshold {
         insert_sort(slice, compare);
         return;
     }
 
     let middle = len / 2;
 
-    merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle], compare);
-    merge_sort_with_buf(&mut slice[middle..], &mut buf[middle..], compare);
+    merge_sort_with_buf(&mut slice[..middle], &mut buf[..middle], compare, insert_sort_max_threshold);
+    merge_sort_with_buf(&mut slice[middle..], &mut buf[middle..], compare, insert_sort_max_threshold);
     merge_sorted_halves(slice, buf, compare);
 }
 
-pub fn merge_sorted_halves<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F)
+// Merges slice of n from 0..n/2 to n/2..n, using buf as scratch space.
+// buf has to be atleast the same size as slice.
+fn merge_sorted_halves<T, F>(slice: &mut [T], buf: &mut [T], compare: &mut F)
 where
     F: FnMut(&T, &T) -> Ordering,
 {
@@ -137,10 +158,9 @@ where
         return;
     }
     let len = slice.len();
-    let middle = len / 2;
     let mut left = 0 as usize;
-    let left_end = middle - 1;
-    let mut right = middle;
+    let left_end = len / 2;
+    let mut right = left_end + 1;
     let right_end = len - 1;
 
     let mut current = left;
@@ -181,7 +201,7 @@ where
         buf_rem_ptr = buf.as_mut_ptr().offset(current as isize);
 
         // Copy left overs
-        // Note: `count` should be 0 when left or right is len + 1.
+        // Note: add 1 to left or right to start from the next item.
         copy_nonoverlapping(left_rem_ptr, buf_rem_ptr, left_end + 1 - left);
         copy_nonoverlapping(right_rem_ptr, buf_rem_ptr, right_end + 1 - right);
 
