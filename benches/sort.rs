@@ -6,6 +6,7 @@ extern crate gluons;
 use rand::{Rng, thread_rng};
 use std::mem;
 use test::Bencher;
+use gluons::sort::merge_sort_smart;
 
 fn gen_ascending(len: usize) -> Vec<u64> {
     (0..len as u64).collect()
@@ -65,25 +66,24 @@ macro_rules! sort_bench {
     }
 }
 
-use gluons::sort::merge_sort;
 
-sort_bench!(merge_sort, sort_small_random, gen_random, 10);
-sort_bench!(merge_sort, sort_small_ascending, gen_ascending, 10);
-sort_bench!(merge_sort, sort_small_descending, gen_descending, 10);
-sort_bench!(merge_sort, sort_small_big_random, gen_big_random, 10);
-sort_bench!(merge_sort, sort_small_big_ascending, gen_big_ascending, 10);
-sort_bench!(merge_sort, sort_small_big_descending, gen_big_descending, 10);
-sort_bench!(merge_sort, sort_medium_random, gen_random, 100);
-sort_bench!(merge_sort, sort_medium_ascending, gen_ascending, 100);
-sort_bench!(merge_sort, sort_medium_descending, gen_descending, 100);
-sort_bench!(merge_sort, sort_large_random, gen_random, 10000);
-sort_bench!(merge_sort, sort_large_ascending, gen_ascending, 10000);
-sort_bench!(merge_sort, sort_large_descending, gen_descending, 10000);
-sort_bench!(merge_sort, sort_large_mostly_ascending, gen_mostly_ascending, 10000);
-sort_bench!(merge_sort, sort_large_mostly_descending, gen_mostly_descending, 10000);
-sort_bench!(merge_sort, sort_large_big_random, gen_big_random, 10000);
-sort_bench!(merge_sort, sort_large_big_ascending, gen_big_ascending, 10000);
-sort_bench!(merge_sort, sort_large_big_descending, gen_big_descending, 10000);
+sort_bench!(merge_sort_smart, sort_small_random, gen_random, 10);
+sort_bench!(merge_sort_smart, sort_small_ascending, gen_ascending, 10);
+sort_bench!(merge_sort_smart, sort_small_descending, gen_descending, 10);
+sort_bench!(merge_sort_smart, sort_small_big_random, gen_big_random, 10);
+sort_bench!(merge_sort_smart, sort_small_big_ascending, gen_big_ascending, 10);
+sort_bench!(merge_sort_smart, sort_small_big_descending, gen_big_descending, 10);
+sort_bench!(merge_sort_smart, sort_medium_random, gen_random, 100);
+sort_bench!(merge_sort_smart, sort_medium_ascending, gen_ascending, 100);
+sort_bench!(merge_sort_smart, sort_medium_descending, gen_descending, 100);
+sort_bench!(merge_sort_smart, sort_large_random, gen_random, 10000);
+sort_bench!(merge_sort_smart, sort_large_ascending, gen_ascending, 10000);
+sort_bench!(merge_sort_smart, sort_large_descending, gen_descending, 10000);
+sort_bench!(merge_sort_smart, sort_large_mostly_ascending, gen_mostly_ascending, 10000);
+sort_bench!(merge_sort_smart, sort_large_mostly_descending, gen_mostly_descending, 10000);
+sort_bench!(merge_sort_smart, sort_large_big_random, gen_big_random, 10000);
+sort_bench!(merge_sort_smart, sort_large_big_ascending, gen_big_ascending, 10000);
+sort_bench!(merge_sort_smart, sort_large_big_descending, gen_big_descending, 10000);
 
 macro_rules! std_sort_bench {
     ($name:ident, $gen:expr, $len:expr) => {
@@ -139,7 +139,7 @@ fn sort_large_random_expensive(b: &mut Bencher) {
         let mut v = gen_random(len);
         let mut count = 0;
         
-        gluons::sort::merge_sort(&mut v, |a: &u64, b: &u64| {
+        gluons::sort::merge_sort_smart(&mut v, |a: &u64, b: &u64| {
             count += 1;
             if count % 1_000_000_000 == 0 {
                 panic!("should not happen");

@@ -91,23 +91,16 @@ fn create_slice<T>(len: usize) -> Box<[T]> {
     return v.into_boxed_slice();
 }
 
-pub fn merge_sort<T, F>(slice: &mut [T], compare: F)
+pub fn merge_sort_smart<T, F>(slice: &mut [T], compare: F)
 where
     F: FnMut(&T, &T) -> Ordering,
 {
     // Slices of up to this length get sorted using insertion sort.
-    const DEFAULT_INSERT_SORT_MAX_THRESHOLD: usize = 20;
-    merge_sort_with_insert(slice, compare, DEFAULT_INSERT_SORT_MAX_THRESHOLD);
+    const INSERT_SORT_MAX_THRESHOLD: usize = 20;    
+    merge_sort(slice, compare, INSERT_SORT_MAX_THRESHOLD);
 }
 
-pub fn merge_sort_pure<T, F>(slice: &mut [T], compare: F)
-where
-    F: FnMut(&T, &T) -> Ordering,
-{
-    merge_sort_with_insert(slice, compare, 0);
-}
-
-pub fn merge_sort_with_insert<T, F>(slice: &mut [T], mut compare: F, insert_sort_max_threshold: usize)
+pub fn merge_sort<T, F>(slice: &mut [T], mut compare: F, insert_sort_max_threshold: usize)
 where
     F: FnMut(&T, &T) -> Ordering,
 {
